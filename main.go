@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/mattn/go-gtk/glib"
 	"github.com/mattn/go-gtk/gtk"
 	"github.com/reiver/go-telnet"
+	"io"
 	"os"
 )
 
@@ -27,22 +29,50 @@ func main() {
 		panic("Couldn't connect to RigControl server")
 	}
 
-	_, err = conn.Write([]byte("f"))
+	err, frequency := sendCommand(conn, "f")
 
 	if err != nil {
-		panic("Couldn't write to server")
+		fmt.Printf("Couldn't run command: %v", err)
+		panic("couldn't couldn't")
 	}
 
-	//	b := make([]byte, 4096)
-	//	n, err := conn.Read(b)
-
-	if err != nil {
-		panic("Couldn't read from server")
-	}
-
-	//	fmt.Printf("n = %v err = %v b = %v\n", n, err, b)
+	fmt.Printf("err = %v string = %s\n", err, frequency)
 
 	window.SetSizeRequest(600, 600)
 	window.ShowAll()
 	gtk.Main()
+}
+
+func sendCommand(conn *telnet.Conn, command string) (error, string) {
+	_, err := conn.Write([]byte(command))
+	_, err = conn.Write([]byte("\n"))
+
+	if err != nil {
+		return err, ""
+	}
+
+	return readLine(conn)
+}
+
+func readLine(reader io.Reader) (error, string) {
+	b := make([]byte, 1)
+
+	line := ""
+	var err error
+
+	for {
+		_, err := reader.Read(b)
+
+		if bytes.Equal(b, []byte{10}) {
+			break
+		}
+
+		if err != nil {
+			break
+		}
+
+		line += string(b)
+	}
+
+	return err, line
 }
