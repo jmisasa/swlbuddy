@@ -1,20 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/jmisasa/swlbuddy/rigctl"
 	"github.com/mattn/go-gtk/gdkpixbuf"
 	"github.com/mattn/go-gtk/glib"
 	"github.com/mattn/go-gtk/gtk"
 	"github.com/reiver/go-telnet"
-	"io"
 	"os"
 	"time"
 )
 
 func main() {
 	gtk.Init(&os.Args)
-
 	window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
 	window.SetPosition(gtk.WIN_POS_CENTER)
 	window.SetTitle("SWLBuddy")
@@ -25,10 +23,9 @@ func main() {
 		gtk.MainQuit()
 	}, "foo")
 
-	conn, err := telnet.DialTo("localhost:7356")
-
+	conn, err := rigctl.Connect("localhost", 7356)
 	if err != nil {
-		panic("Couldn't connect to RigControl server")
+		panic(fmt.Sprintf("Couldn't connect to RigControl server: %v", err))
 	}
 
 	freqLabel := gtk.NewLabel("Frequency")
@@ -40,7 +37,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				err, frequency := sendCommand(conn, "f")
+				err, frequency := rigctl.Command(conn, "f")
 
 				if err != nil {
 					panic("error")
@@ -94,42 +91,4 @@ func main() {
 	window.SetSizeRequest(600, 600)
 	window.ShowAll()
 	gtk.Main()
-}
-
-func sendCommand(conn *telnet.Conn, command string) (error, string) {
-	_, err := conn.Write([]byte(command))
-	_, err = conn.Write([]byte("\n"))
-
-	fmt.Println("command sent\n")
-
-	if err != nil {
-		return err, ""
-	}
-
-	return readLine(conn)
-}
-
-func readLine(reader io.Reader) (error, string) {
-	b := make([]byte, 1)
-
-	line := ""
-	var err error
-
-	for {
-		_, err := reader.Read(b)
-
-		fmt.Printf("read byte %v\n", b)
-
-		if bytes.Equal(b, []byte{10}) {
-			break
-		}
-
-		if err != nil {
-			break
-		}
-
-		line += string(b)
-	}
-
-	return err, line
 }
