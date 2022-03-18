@@ -59,8 +59,6 @@ func main() {
 				}
 
 				if currentFrequency != frequency {
-					fmt.Printf("Freq has changed: %s (old was: %s)", frequency, currentFrequency)
-
 					label.SetText(frequency)
 					currentFrequency = frequency
 

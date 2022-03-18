@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	_ "golang.org/x/text/number"
 	"os"
 	"strconv"
+	"time"
 )
 
 type SwlLine struct {
@@ -16,8 +16,6 @@ type SwlLine struct {
 }
 
 func GetByFrequency(hz string) []SwlLine {
-	fmt.Printf("Hz: %s, kHz: %s\n", hz, getKhz(hz))
-
 	userConfigDir, _ := os.UserConfigDir()
 	pathToDb := userConfigDir + "/swlbuddy/eibi.sqlite"
 	db, err := sql.Open("sqlite3", "file:"+pathToDb+"?cache=shared")
@@ -26,12 +24,18 @@ func GetByFrequency(hz string) []SwlLine {
 		panic(fmt.Sprintf("Error accessing DB: %v", err))
 	}
 
+	_, utcHour := getCurrentUTC()
+
 	query := `
-		SELECT station, itu_code, language FROM eibi WHERE khz LIKE '%' || $1 || '%'
+		SELECT station, itu_code, language 
+		FROM eibi 
+		WHERE 
+			khz LIKE $1 || '%'
+			AND utc_start <= $2 AND utc_end >= $3
 	`
 
 	lines := []SwlLine{}
-	rows, err := db.Query(query, getKhz(hz))
+	rows, err := db.Query(query, getKhz(hz), utcHour, utcHour)
 
 	if err != nil {
 		panic(fmt.Sprintf("Error querying eibi table: %v", err))
@@ -40,8 +44,6 @@ func GetByFrequency(hz string) []SwlLine {
 	for rows.Next() {
 		var line SwlLine
 		err = rows.Scan(&line.Station, &line.CountryCode, &line.Language)
-
-		fmt.Println("Line:%v", line)
 
 		if err != nil {
 			panic("Error processing lines")
@@ -61,4 +63,10 @@ func getKhz(hz string) string {
 	}
 
 	return strconv.Itoa(intHz / 1000)
+}
+
+func getCurrentUTC() (ymd string, his string) {
+	currentUTC := time.Now().UTC()
+
+	return currentUTC.Format("2006-01-02"), currentUTC.Format("1504")
 }
