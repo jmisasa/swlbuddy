@@ -69,7 +69,7 @@ func main() {
 						store.Append(&iter)
 						store.Set(&iter,
 							0, line.Station,
-							1, line.CountryCode,
+							1, line.CountryName,
 							2, line.Language,
 						)
 					}

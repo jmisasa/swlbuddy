@@ -11,7 +11,7 @@ import (
 
 type SwlLine struct {
 	Station     string
-	CountryCode string
+	CountryName string
 	Language    string
 }
 
@@ -27,8 +27,13 @@ func GetByFrequency(hz string) []SwlLine {
 	_, utcHour := getCurrentUTC()
 
 	query := `
-		SELECT station, itu_code, language 
+		SELECT 
+			station, 
+			country_codes.country_name, 
+			language_codes.description 
 		FROM eibi 
+		LEFT JOIN language_codes ON eibi.language = language_codes.language_code
+		LEFT JOIN country_codes ON eibi.itu_code = country_codes.itu_code
 		WHERE 
 			khz LIKE $1 || '%'
 			AND utc_start <= $2 AND utc_end >= $3
@@ -43,7 +48,7 @@ func GetByFrequency(hz string) []SwlLine {
 
 	for rows.Next() {
 		var line SwlLine
-		err = rows.Scan(&line.Station, &line.CountryCode, &line.Language)
+		err = rows.Scan(&line.Station, &line.CountryName, &line.Language)
 
 		if err != nil {
 			panic("Error processing lines")
