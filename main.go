@@ -11,9 +11,11 @@ import (
 	"time"
 )
 
-var currentFrequency = ""
+const TabIndexCurrentlyTransmitting = 1
 
 func main() {
+	var currentFrequency = ""
+
 	gtk.Init(&os.Args)
 
 	window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
@@ -35,12 +37,12 @@ func main() {
 
 	vpaned := gtk.NewVPaned()
 
-	store := gtk.NewListStore(glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING)
+	byFrequencyStore := gtk.NewListStore(glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING)
 	treeview := gtk.NewTreeView()
 	vpaned.Pack1(freqLabel, false, true)
 	vpaned.Pack2(treeview, true, false)
 
-	treeview.SetModel(store)
+	treeview.SetModel(byFrequencyStore)
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Station", gtk.NewCellRendererText(), "text", 0))
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Country", gtk.NewCellRendererText(), "text", 1))
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Language", gtk.NewCellRendererText(), "text", 2))
@@ -62,12 +64,12 @@ func main() {
 					label.SetText(frequency)
 					currentFrequency = frequency
 
-					store.Clear()
+					byFrequencyStore.Clear()
 
 					for _, line := range swldata.GetByFrequency(frequency) {
 						var iter gtk.TreeIter
-						store.Append(&iter)
-						store.Set(&iter,
+						byFrequencyStore.Append(&iter)
+						byFrequencyStore.Set(&iter,
 							0, line.Station,
 							1, line.CountryName,
 							2, line.Language,
@@ -80,16 +82,48 @@ func main() {
 				return
 			}
 		}
-	}(conn, freqLabel, store)
+	}(conn, freqLabel, byFrequencyStore)
+
+	currentDateTimeLabel := gtk.NewLabel("Current hour")
+	currentlyTxingVpaned := gtk.NewVPaned()
+
+	currentlyTxingStore := gtk.NewListStore(glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING)
+	currentlyTxingTreeView := gtk.NewTreeView()
+	currentlyTxingVpaned.Pack1(currentDateTimeLabel, false, true)
+	currentlyTxingVpaned.Pack2(currentlyTxingTreeView, true, false)
+
+	currentlyTxingTreeView.SetModel(currentlyTxingStore)
+	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Frequency", gtk.NewCellRendererText(), "text", 0))
+	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Station", gtk.NewCellRendererText(), "text", 1))
+	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Country", gtk.NewCellRendererText(), "text", 2))
+	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Language", gtk.NewCellRendererText(), "text", 3))
 
 	notebook := gtk.NewNotebook()
+
+	notebook.Connect("switch-page", func(ctx *glib.CallbackContext) {
+		tabIndex := ctx.Args(1)
+
+		if tabIndex == TabIndexCurrentlyTransmitting {
+			currentlyTxingStore.Clear()
+
+			for _, line := range swldata.GetCurrentlyTransmitting() {
+				var iter gtk.TreeIter
+				currentlyTxingStore.Append(&iter)
+				currentlyTxingStore.Set(&iter,
+					0, line.Frequency,
+					1, line.Station,
+					2, line.CountryName,
+					3, line.Language,
+				)
+			}
+		}
+	}, "")
 
 	tabLabel := "By frequency"
 	notebook.AppendPage(vpaned, gtk.NewLabel("By frequency"))
 
 	tabLabel = "Currently transmitting"
-	currentlyTransmitting := gtk.NewFrame(tabLabel)
-	notebook.AppendPage(currentlyTransmitting, gtk.NewLabel(tabLabel))
+	notebook.AppendPage(currentlyTxingVpaned, gtk.NewLabel(tabLabel))
 
 	window.Add(notebook)
 	window.SetSizeRequest(600, 600)
