@@ -5,14 +5,21 @@ import (
 	"github.com/reiver/go-telnet"
 	"io"
 	"strconv"
+	"strings"
 )
 
 func Connect(host string, port int) (*telnet.Conn, error) {
 	return telnet.DialTo(host + ":" + strconv.Itoa(port))
 }
 
-func Command(conn *telnet.Conn, command string) (error, string) {
-	_, err := conn.Write([]byte(command))
+func Command(conn *telnet.Conn, command string, params ...string) (error, string) {
+	finalCommand := command
+
+	if len(params) > 0 {
+		finalCommand = command + " " + strings.Join(params, " ")
+	}
+
+	_, err := conn.Write([]byte(finalCommand))
 	_, err = conn.Write([]byte("\n"))
 
 	if err != nil {

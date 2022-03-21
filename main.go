@@ -8,6 +8,7 @@ import (
 	"github.com/mattn/go-gtk/gtk"
 	"github.com/reiver/go-telnet"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -97,6 +98,25 @@ func main() {
 	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Station", gtk.NewCellRendererText(), "text", 1))
 	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Country", gtk.NewCellRendererText(), "text", 2))
 	currentlyTxingTreeView.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Language", gtk.NewCellRendererText(), "text", 3))
+	currentlyTxingTreeView.Connect("row-activated", func(ctx *glib.CallbackContext) {
+		var path *gtk.TreePath
+		var column *gtk.TreeViewColumn
+		currentlyTxingTreeView.GetCursor(&path, &column)
+		fmt.Println(path.String(), path.GetDepth())
+
+		treeModel := currentlyTxingStore.ToTreeModel()
+		var iter gtk.TreeIter
+		treeModel.GetIter(&iter, path)
+
+		var value glib.GValue
+		value.Init(glib.G_TYPE_STRING)
+		treeModel.GetValue(&iter, 0, &value)
+
+		khz, _ := strconv.ParseFloat(value.GetString(), 64)
+		hz := fmt.Sprintf("%d\n", int(khz*1000))
+
+		rigctl.Command(conn, "F", hz)
+	}, "")
 
 	notebook := gtk.NewNotebook()
 
