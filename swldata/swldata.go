@@ -41,12 +41,13 @@ func GetByFrequency(hz string) []SwlLine {
 		LEFT JOIN language_codes ON eibi.language = language_codes.language_code
 		LEFT JOIN country_codes ON eibi.itu_code = country_codes.itu_code
 		WHERE 
-			khz LIKE $1 || '%'
+			khz >= $1 - 5 AND khz <= $2 + 5
 			AND utc_start <= $2 AND utc_end >= $3
 	`
 
 	lines := []SwlLine{}
-	rows, err := db.Query(query, getKhz(hz), utcHour, utcHour)
+	khz := getKhz(hz)
+	rows, err := db.Query(query, khz, khz, utcHour, utcHour)
 
 	if err != nil {
 		panic(fmt.Sprintf("Error querying eibi table: %v", err))
