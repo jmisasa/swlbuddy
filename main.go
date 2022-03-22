@@ -38,7 +38,7 @@ func main() {
 
 	vpaned := gtk.NewVPaned()
 
-	byFrequencyStore := gtk.NewListStore(glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING)
+	byFrequencyStore := gtk.NewListStore(glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING, glib.G_TYPE_STRING)
 	treeview := gtk.NewTreeView()
 	vpaned.Pack1(freqLabel, false, true)
 	vpaned.Pack2(treeview, true, false)
@@ -47,6 +47,7 @@ func main() {
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Station", gtk.NewCellRendererText(), "text", 0))
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Country", gtk.NewCellRendererText(), "text", 1))
 	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Language", gtk.NewCellRendererText(), "text", 2))
+	treeview.AppendColumn(gtk.NewTreeViewColumnWithAttributes("Target", gtk.NewCellRendererText(), "text", 3))
 
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan struct{})
@@ -74,6 +75,7 @@ func main() {
 							0, line.Station,
 							1, line.CountryName,
 							2, line.Language,
+							3, line.TargetAreaCode,
 						)
 					}
 				}

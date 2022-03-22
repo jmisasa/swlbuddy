@@ -10,10 +10,11 @@ import (
 )
 
 type SwlLine struct {
-	Frequency   string
-	Station     string
-	CountryName string
-	Language    string
+	Frequency      string
+	Station        string
+	CountryName    string
+	Language       string
+	TargetAreaCode string
 }
 
 func GetByFrequency(hz string) []SwlLine {
@@ -36,7 +37,8 @@ func GetByFrequency(hz string) []SwlLine {
 			        eibi.language,
 					'N/A'
 				)
-			) description
+			) description,
+		    target_area_code
 		FROM eibi 
 		LEFT JOIN language_codes ON eibi.language = language_codes.language_code
 		LEFT JOIN country_codes ON eibi.itu_code = country_codes.itu_code
@@ -55,8 +57,7 @@ func GetByFrequency(hz string) []SwlLine {
 
 	for rows.Next() {
 		var line SwlLine
-		err = rows.Scan(&line.Station, &line.CountryName, &line.Language)
-
+		err = rows.Scan(&line.Station, &line.CountryName, &line.Language, &line.TargetAreaCode)
 		if err != nil {
 			panic("Error processing lines")
 		}
