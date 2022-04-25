@@ -6,7 +6,7 @@ import (
 	"github.com/jmisasa/swlbuddy/swldata"
 	"github.com/mattn/go-gtk/glib"
 	"github.com/mattn/go-gtk/gtk"
-	"github.com/reiver/go-telnet"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -35,6 +35,7 @@ func main() {
 	}
 
 	freqLabel := gtk.NewLabel("Frequency")
+	freqLabel.ModifyFontEasy("18")
 
 	vpaned := gtk.NewVPaned()
 
@@ -52,7 +53,7 @@ func main() {
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan struct{})
 
-	go func(conn *telnet.Conn, label *gtk.Label, listStore *gtk.ListStore) {
+	go func(conn net.Conn, label *gtk.Label, listStore *gtk.ListStore) {
 		for {
 			select {
 			case <-ticker.C:
@@ -104,7 +105,6 @@ func main() {
 		var path *gtk.TreePath
 		var column *gtk.TreeViewColumn
 		currentlyTxingTreeView.GetCursor(&path, &column)
-		fmt.Println(path.String(), path.GetDepth())
 
 		treeModel := currentlyTxingStore.ToTreeModel()
 		var iter gtk.TreeIter

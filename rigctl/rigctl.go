@@ -1,18 +1,19 @@
 package rigctl
 
 import (
-	"bytes"
-	"github.com/reiver/go-telnet"
-	"io"
+	"bufio"
+	"fmt"
+	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
-func Connect(host string, port int) (*telnet.Conn, error) {
-	return telnet.DialTo(host + ":" + strconv.Itoa(port))
+func Connect(host string, port int) (net.Conn, error) {
+	return net.Dial("tcp", host+":"+strconv.Itoa(port))
 }
 
-func Command(conn *telnet.Conn, command string, params ...string) (error, string) {
+func Command(conn net.Conn, command string, params ...string) (error, string) {
 	finalCommand := command
 
 	if len(params) > 0 {
@@ -26,28 +27,14 @@ func Command(conn *telnet.Conn, command string, params ...string) (error, string
 		return err, ""
 	}
 
-	return readLine(conn)
-}
+	time.Sleep(100 * time.Millisecond)
+	rawResult, err := bufio.NewReader(conn).ReadBytes(10)
 
-func readLine(reader io.Reader) (error, string) {
-	b := make([]byte, 1)
-
-	line := ""
-	var err error
-
-	for {
-		_, err := reader.Read(b)
-
-		if bytes.Equal(b, []byte{10}) {
-			break
-		}
-
-		if err != nil {
-			break
-		}
-
-		line += string(b)
+	if err != nil {
+		panic(fmt.Sprintf("Error: %v", err))
 	}
 
-	return err, line
+	commandResult := strings.TrimSuffix(string(rawResult), "\n")
+
+	return nil, commandResult
 }
