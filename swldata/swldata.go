@@ -43,8 +43,8 @@ func GetByFrequency(hz string) []SwlLine {
 		LEFT JOIN language_codes ON eibi.language = language_codes.language_code
 		LEFT JOIN country_codes ON eibi.itu_code = country_codes.itu_code
 		WHERE 
-			khz >= $1 - 5 AND khz <= $2 + 5
-			AND utc_start <= $2 AND utc_end >= $3
+			khz >= $1 - 1 AND khz <= $2 + 1
+			AND utc_start <= $3 AND utc_end >= $4
 	`
 
 	lines := []SwlLine{}
